@@ -196,36 +196,36 @@ commands:
 
 version: 2.1
 jobs:
-  build-style-transfer:
+  build-semantic-segmentation-aerial:
     docker:
     - image: circleci/python:3.6.6-node
     working_directory: ~/singnet
     environment:
-      SERVICE_NAME: style-transfer
-      SERVICE_RUN_COMMAND: bash -c "git pull;python3 run_service.py"
+      SERVICE_NAME: semantic-segmentation-aerial
+      SERVICE_RUN_COMMAND: bash -c "git pull origin ${CIRCLE_BRANCH};python3 run_service.py"
       SERVICE_TEST_COMMAND: bash -c "python3 test_service.py auto"
     steps:
       - build_command:
           docker_nvidia: true
-          docker_image_name: style_transfer
-          docker_container_name: STYLE_TRANSFER
+          docker_image_name: semantic_segmentation_aerial
+          docker_container_name: SEMANTIC_SEGMENTATION_AERIAL
 
-  deploy-style-transfer:
+  deploy-semantic-segmentation-aerial:
     docker:
     - image: circleci/python:3.6.6-node
     working_directory: ~/singnet
     environment:
-      SERVICE_NAME: style-transfer
+      SERVICE_NAME: semantic-segmentation-aerial
       CERTS_FOLDER: singnet/.certs
-      SERVICE_RUN_COMMAND: bash -c "git pull;python3 run_service.py --ssl"
+      SERVICE_RUN_COMMAND: bash -c "git pull origin ${CIRCLE_BRANCH};python3 run_service.py --ssl"
       SERVICE_TEST_COMMAND: bash -c "python3 test_service.py"
-      SNETD_PORT_MAINNET: 7018
-      SNETD_PORT_ROPSTEN: 7078
+      SNETD_PORT_MAINNET: 7016
+      SNETD_PORT_ROPSTEN: 7076
     steps:
       - deploy_command:
           docker_nvidia: true
-          docker_image_name: style_transfer
-          docker_container_name: STYLE_TRANSFER
+          docker_image_name: semantic_segmentation_aerial
+          docker_container_name: SEMANTIC_SEGMENTATION_AERIAL
           docker_etcd_host_folder: singnet/etcd/${SERVICE_NAME}/
           docker_etcd_container_folder: opt/singnet/${CIRCLE_PROJECT_REPONAME}/etcd/
 
@@ -233,10 +233,10 @@ workflows:
   version: 2.1
   build_deploy_service:
     jobs:
-      - build-style-transfer
-      - deploy-style-transfer:
+      - build-semantic-segmentation-aerial
+      - deploy-semantic-segmentation-aerial:
           requires:
-            - build-style-transfer
+            - build-semantic-segmentation-aerial
           filters:
             branches:
               only: master

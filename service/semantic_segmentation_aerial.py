@@ -1,6 +1,5 @@
 import numpy as np
 from skimage import io
-from tqdm import tqdm_notebook as tqdm
 import itertools
 # Torch imports
 import torch
@@ -250,18 +249,10 @@ class SemanticSegmentationAerial:
 
         pred = np.zeros(img.shape[:2] + (N_CLASSES,))
 
-        total = self.count_sliding_window(img, stride) // batch_size
-        for i, coords in enumerate(tqdm(self.grouper(batch_size,
-                                        self.sliding_window(img,
-                                                            stride,
-                                                            window_size)),
-                                        total=total,
-                                        leave=False)):
-            # Display in progress results
-            # if i > 0 and total > 10 and i % int(10 * total / 100) == 0:
-            #     Keep progress code ?
-            # _pred = np.argmax(pred, axis=-1)
-
+        for i, coords in enumerate(self.grouper(batch_size,
+                                   self.sliding_window(img,
+                                                       stride,
+                                                       window_size))):
             # Build the tensor
             image_patches = [np.copy(img[x:x+w, y:y+h]).transpose((2, 0, 1)) for x, y, w, h in coords]
             image_patches = np.asarray(image_patches)

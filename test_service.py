@@ -1,8 +1,8 @@
 import grpc
 
 # import the generated classes
-import service.service_spec.style_transfer_pb2_grpc as grpc_bt_grpc
-import service.service_spec.style_transfer_pb2 as grpc_bt_pb2
+import service.service_spec.semantic_segmentation_aerial_pb2_grpc as grpc_bt_grpc
+import service.service_spec.semantic_segmentation_aerial_pb2 as grpc_bt_pb2
 
 from service import registry, base64_to_jpg, clear_file
 
@@ -11,20 +11,16 @@ if __name__ == "__main__":
     try:
 
         # open a gRPC channel
-        endpoint = "localhost:{}".format(registry["style_transfer_service"]["grpc"])
+        endpoint = "localhost:{}".format(registry["semantic_segmentation_aerial"]["grpc"])
         channel = grpc.insecure_channel("{}".format(endpoint))
         print("Opened channel")
 
-        grpc_method = "transfer_image_style"
+        grpc_method = "segment_aerial_image"
+
         content = \
             "https://www.gettyimages.ie/gi-resources/images/Homepage/Hero/UK/CMS_Creative_164657191_Kingfisher.jpg"
-        style = "docs/assets/input/style/mondrian.jpg"
-        contentSize = 0
-        styleSize = 0
-        preserveColor = False
-        alpha = 0.378
-        crop = True
-        saveExt = "jpg"
+        window_size = 256
+        stride = 32
 
         # create a stub (client)
         stub = grpc_bt_grpc.StyleTransferStub(channel)
