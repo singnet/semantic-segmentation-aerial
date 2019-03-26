@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message SemanticSegmentationAerialRequest {
+    string window_size = 1;
+    string stride = 2;
+    int32 input = 3;
+}
+
+message Image {
+    string data = 1;
+}
+
+service SuperResolution {
+    rpc segment_aerial_image (SemanticSegmentationAerialRequest) returns (Image);
+}
