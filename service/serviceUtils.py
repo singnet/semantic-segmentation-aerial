@@ -81,6 +81,17 @@ def base64_to_jpg(base64img, output_file_path=""):
     return decoded_jpg
 
 
+def base64_to_tif(base64img, output_file_path=""):
+    """Decodes from base64 to jpg. If output_file_path is defined, saves the decoded image."""
+
+    decoded_tif = base64.b64decode(base64img)
+    tif_bytes = io.BytesIO(decoded_tif)
+    image = Image.open(tif_bytes)
+    if output_file_path != "":
+        image.save(output_file_path, format='TIFF')
+    return decoded_tif
+
+
 def clear_path(path):
     """ Deletes all files in a path. """
 
@@ -165,7 +176,7 @@ def treat_image_input(input_argument, save_dir, image_type):
         log.debug("Treating image input as a url.")
         path = urlparse(input_argument).path
         file_ext = os.path.splitext(path)[1].lower()
-        if file_ext not in ['.jpg', '.jpeg', '.png']:
+        if file_ext not in ['.jpg', '.jpeg', '.png', '.tif', '.tiff']:
             log.error('URL image extension not recognized. Should be .jpg, .jpeg or .png. '
                       'Got {}. Trying to treat image as .jpg.'.format(file_ext))
             save_path += ".jpg"
@@ -195,6 +206,8 @@ def treat_image_input(input_argument, save_dir, image_type):
             file_ext = ".png"
         elif image.format == 'JPEG' or image.format == 'JPG':
             file_ext = '.jpg'
+        elif image.format == 'TIFF' or image.format == 'TIF':
+            file_ext = '.tif'
         else:
             log.error("Input file extension not recognized!")
             return False
@@ -214,6 +227,9 @@ def treat_image_input(input_argument, save_dir, image_type):
         else:
             file_ext = '.jpg'
         save_path += file_ext
-        base64_to_jpg(input_argument, save_path)
+        if file_ext == '.tif' or file_ext == '.tiff':
+            base64_to_tif(input_argument, save_path)
+        else:
+            base64_to_jpg(input_argument, save_path)
 
     return save_path, file_index_str
