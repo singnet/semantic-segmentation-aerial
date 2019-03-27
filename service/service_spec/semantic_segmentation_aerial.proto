@@ -10,6 +10,6 @@ message Image {
     string data = 1;
 }
 
-service SuperResolution {
+service SemanticSegmentationAerial {
     rpc segment_aerial_image (SemanticSegmentationAerialRequest) returns (Image);
 }

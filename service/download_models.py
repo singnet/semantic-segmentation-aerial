@@ -1,6 +1,18 @@
 #!/usr/bin/python3
 
+import argparse
 import requests
+import pathlib
+
+parser = argparse.ArgumentParser(description="Download model/weights for the service.")
+parser.add_argument('filepath',
+                    type=str,
+                    help="Specifies the full path of the model (including its name).",
+                    default="/root/singnet/semantic-segmentation-aerial/service/models/segnet_final_reference.pth")
+parser.add_argument('google_file_id',
+                    type=str,
+                    help="The ID of the Google Drive file to be downloaded.",
+                    default="1cwXe8ANkhFqe2i_UNxpZu15y2HZ0N9KN")
 
 
 def download_file_from_google_drive(file_id, destination):
@@ -33,11 +45,17 @@ def download_file_from_google_drive(file_id, destination):
     save_response_content(response, destination)
 
 
-google_file_id = "1cwXe8ANkhFqe2i_UNxpZu15y2HZ0N9KN"
-save_path = "/root/singnet/semantic-segmentation-aerial/service/segnet_final_reference.pth"
-try:
-    download_file_from_google_drive(google_file_id, save_path)
-    exit(0)
-except Exception as e:
-    print(e)
-    exit(1)
+if __name__ == "__main__":
+    args = parser.parse_args()
+
+    # Creates the directory using pathlib
+    path = pathlib.Path(args.filepath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Downloads the google drive file
+    try:
+        download_file_from_google_drive(args.google_file_id, args.filepath)
+        exit(0)
+    except Exception as e:
+        print(e)
+        exit(1)

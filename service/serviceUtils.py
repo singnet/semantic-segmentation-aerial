@@ -29,10 +29,16 @@ def main_loop(grpc_handler, args):
 def download(url, filename):
     """Downloads a file given its url and saves to filename."""
 
+    # Adds header to deal with images under https
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT x.y; Win64; x64; rv:9.0) Gecko/20100101 Firefox/10.0')]
+    urllib.request.install_opener(opener)
+
+    # Downloads the image
     try:
         urllib.request.urlretrieve(url, filename)
-    except Exception as e:
-        print(e)
+    except Exception:
+        raise
     return
 
 
@@ -40,11 +46,25 @@ def jpg_to_base64(jpgimg, open_file=False):
     """Encodes a jpg file into base64. Can receive either the already open jpg PIL Image or its path as input."""
 
     if open_file:
-        jpgimg = Image.open(jpgimg)
+        try:
+            jpgimg = Image.open(jpgimg)
+        except Exception as e:
+            log.error(e)
+            raise
     imgbuffer = io.BytesIO()
-    jpgimg.save(imgbuffer, format='JPEG')
+    try:
+        jpgimg.save(imgbuffer, format='JPEG')
+    except Exception as e:
+        log.error(e)
+        raise
     imgbytes = imgbuffer.getvalue()
     return base64.b64encode(imgbytes)
+
+
+def png_to_base64(pngimg):
+    """Encodes a png file into base64. Opens the file first!"""
+    with open(pngimg, "rb") as image_file:
+        return base64.b64encode(image_file.read())
 
 
 def base64_to_jpg(base64img, output_file_path=""):
@@ -85,13 +105,24 @@ def clear_file(file_path):
     return
 
 
+def initialize_diretories(directories_list, clear_directories=True):
+    """ Creates directories (or clears them if necesary)."""
+
+    for directory in directories_list:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        else:
+            if clear_directories:
+                clear_path(directory)
+
+
 def get_file_index(save_dir, prefix):
     """ Gets number "x" of images of this type in the directory (so that the save path will be "prefix_x".
     Requires files named as follows: "*_xx.ext", e.g.: "contentimage_03.jpg", from which 03 would be extracted to return
     04 as the index of the next file to be saved. This number resets to 0 at 99."""
 
     file_index = 0
-    regex = prefix + '([0-9]{2})\.([a-z]{3})'
+    regex = prefix + r'([0-9]{2})\.([a-z]{3})'
     files = [f for f in os.listdir(save_dir) if os.path.isfile(os.path.join(save_dir, f))]
     if files:
         for file_name in files:
@@ -107,23 +138,48 @@ def get_file_index(save_dir, prefix):
     return file_index_str
 
 
+def png_to_jpg(png_path, delete_original=True):
+    """Opens a png image, creates a jpg image of the same name and optionally deletes the original png image.
+    Returns: path to the jpg image."""
+    with Image.open(png_path) as png_img:
+        jpg_img = png_img.convert('RGB')
+        stripped_file_name = os.path.splitext(png_path)[0]
+        jpg_path = stripped_file_name + ".jpg"
+        jpg_img.save(jpg_path)
+    if delete_original:
+        clear_file(png_path)
+    return jpg_path
+
+
 def treat_image_input(input_argument, save_dir, image_type):
     """ Gets image save path, downloads links or saves local images to temporary folder, deals with base64 inputs."""
 
     # Gets index (numerical suffix) to save the image (so it multiple calls are allowed)
-    file_index_str = get_file_index(save_dir, image_type+"image_")
+    file_index_str = get_file_index(save_dir, image_type + "_")
 
     # Assemble save path (still lacks extension)
-    save_path = save_dir + image_type + "image_" + file_index_str
+    save_path = save_dir + '/' + image_type + "_" + file_index_str
 
     # If its a link, download
     if urlparse(input_argument).scheme in ('http', 'https'):
         log.debug("Treating image input as a url.")
         path = urlparse(input_argument).path
-        file_ext = os.path.splitext(path)[1]
-        save_path += file_ext
+        file_ext = os.path.splitext(path)[1].lower()
+        if file_ext not in ['.jpg', '.jpeg', '.png']:
+            log.error('URL image extension not recognized. Should be .jpg, .jpeg or .png. '
+                      'Got {}. Trying to treat image as .jpg.'.format(file_ext))
+            save_path += ".jpg"
+        else:
+            save_path += file_ext
         log.debug("Downloading image under the path: {}".format(save_path))
-        download(input_argument, save_path)
+        try:
+            download(input_argument, save_path)
+            # if file_ext == ".png":
+            #     save_path = png_to_jpg(save_path, True)
+            Image.open(save_path)
+        except Exception:
+            clear_file(save_path)
+            raise
 
     # If its a local file
     elif os.path.isfile(input_argument):
@@ -149,7 +205,15 @@ def treat_image_input(input_argument, save_dir, image_type):
 
     # If it's not a local file, try to decode from base64 to jpg and save
     else:
+        # TODO : check if always decoding base64 to JPG works.
         log.debug("Treating image input as base64.")
+        # Extracting header if present
+        if input_argument[0:4] == "data":
+            file_ext = '.' + input_argument.split('/')[1].split(';')[0].lower()
+            input_argument = input_argument.split(',')[1]
+        else:
+            file_ext = '.jpg'
+        save_path += file_ext
         base64_to_jpg(input_argument, save_path)
 
     return save_path, file_index_str

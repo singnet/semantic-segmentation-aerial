@@ -156,10 +156,8 @@ class SegNet(nn.Module):
         return x
 
 
-class SemanticSegmentationAerial:
-
-    def __init__(self):
-        self.MODEL_PATH = '/opt/singnet/semantic-segmentation-aerial/service/segnet_final_reference.pth'
+class SemanticSegmentationAerialModel:
+    def __init__(self, model_path):
         self.IN_CHANNELS = 3  # Number of input channels (e.g. RGB)
         self.BATCH_SIZE = 10  # Number of samples in a mini-batch
         self.WEIGHTS = torch.ones(N_CLASSES)  # Weights for class balancing
@@ -174,6 +172,13 @@ class SemanticSegmentationAerial:
         self.invert_palette = {v: k for k, v in self.palette.items()}
 
         self.net = SegNet()
+        try:
+            self.net.load_state_dict(torch.load(model_path))
+            self.net.cuda()
+            log.debug("Loaded weights in SegNet !")
+        except Exception as e:
+            log.error(e)
+            raise e
 
     def convert_to_color(self, arr_2d):
         """ Numeric labels to RGB-color encoding """
@@ -230,47 +235,47 @@ class SemanticSegmentationAerial:
                 return
             yield chunk
 
-    def load_weights(self):
+    def segment(self, input_image, window_size, stride, output_image_path):
         try:
-            self.net.load_state_dict(torch.load(self.MODEL_PATH))
-            print("Loaded weights in SegNet !")
+            log.debug("Received call for segmentation.")
+            batch_size = self.BATCH_SIZE
+            window_size = (window_size, window_size)
+            img = (1 / 255 * np.asarray(io.imread(input_image), dtype='float32'))
+
+            # Switch the network to inference mode
+            self.net.eval()
+
+            pred = np.zeros(img.shape[:2] + (N_CLASSES,))
+
+            log.debug("Started image evaluation.")
+            for i, coords in enumerate(self.grouper(batch_size,
+                                       self.sliding_window(img,
+                                                           stride,
+                                                           window_size))):
+                # Build the tensor
+                image_patches = [np.copy(img[x:x+w, y:y+h]).transpose((2, 0, 1)) for x, y, w, h in coords]
+                image_patches = np.asarray(image_patches)
+                image_patches = Variable(torch.from_numpy(image_patches).cuda(), volatile=True)
+
+                # Do the inference
+                outs = self.net(image_patches)
+                outs = outs.data.cpu().numpy()
+
+                # Fill in the results array
+                for out, (x, y, w, h) in zip(outs, coords):
+                    out = out.transpose((1, 2, 0))
+                    pred[x:x+w, y:y+h] += out
+                del outs
+            log.debug("Image evaluation complete.")
+
+            pred = np.argmax(pred, axis=-1)
+            img = self.convert_to_color(pred)
+            io.imsave(output_image_path, img)
+            log.debug("Output image saved at: {}.".format(output_image_path))
+            return True
         except Exception as e:
             log.error(e)
             raise e
-        self.net.cuda()
-
-    def segment(self, input_image, window_size, stride):
-        batch_size = self.BATCH_SIZE
-        window_size = (window_size, window_size)
-        img = (1 / 255 * np.asarray(io.imread(input_image), dtype='float32'))
-
-        # Switch the network to inference mode
-        self.net.eval()
-
-        pred = np.zeros(img.shape[:2] + (N_CLASSES,))
-
-        for i, coords in enumerate(self.grouper(batch_size,
-                                   self.sliding_window(img,
-                                                       stride,
-                                                       window_size))):
-            # Build the tensor
-            image_patches = [np.copy(img[x:x+w, y:y+h]).transpose((2, 0, 1)) for x, y, w, h in coords]
-            image_patches = np.asarray(image_patches)
-            image_patches = Variable(torch.from_numpy(image_patches).cuda(), volatile=True)
-
-            # Do the inference
-            outs = self.net(image_patches)
-            outs = outs.data.cpu().numpy()
-
-            # Fill in the results array
-            for out, (x, y, w, h) in zip(outs, coords):
-                out = out.transpose((1, 2, 0))
-                pred[x:x+w, y:y+h] += out
-            del outs
-
-        pred = np.argmax(pred, axis=-1)
-
-        return pred
 
 # Parameters
 
@@ -294,8 +299,6 @@ class SemanticSegmentationAerial:
 #            5: (255, 0, 0),  # Clutter (red)
 #            6: (0, 0, 0)}  # Undefined (black)
 # invert_palette = {v: k for k, v in palette.items()}
-
-
 
 # instantiate the network
 # try:
@@ -346,10 +349,15 @@ class SemanticSegmentationAerial:
 # pred = np.zeros(img.shape[:2] + (N_CLASSES,))
 
 # total = count_sliding_window(img, step=stride, window_size=window_size) // batch_size
-# for i, coords in enumerate(tqdm(grouper(batch_size, sliding_window(img, step=stride, window_size=window_size)), total=total, leave=False)):
+# for i, coords in enumerate(tqdm(grouper(batch_size,
+#                                         sliding_window(img,
+#                                                        step=stride,
+#                                                        window_size=window_size)),
+#                                 total=total,
+#                                 leave=False)):
 #     # Display in progress results
 #     # if i > 0 and total > 10 and i % int(10 * total / 100) == 0:
-#     #     # TODO: Remove plotting / Keep progress code ?
+#         # TODO: Remove plotting / Keep progress code ?
 #     # _pred = np.argmax(pred, axis=-1)
 #
 #     # Build the tensor

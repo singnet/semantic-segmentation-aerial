@@ -8,6 +8,8 @@ ENV SINGNET_REPOS=/opt/singnet
 ENV PROJECT_ROOT=${SINGNET_REPOS}/${git_repo}
 ENV SERVICE_DIR=${PROJECT_ROOT}/service
 
+ENV MODEL_PATH=${SERVICE_DIR}/models/segnet_final_reference.pth
+
 # Updates and basic dependencies
 RUN apt update &&\
     apt install wget git &&\
@@ -31,6 +33,6 @@ RUN mkdir -p ${SINGNET_REPOS} &&\
     python3 -m pip install -r requirements.txt &&\
     sh buildproto.sh &&\
     cd ${SERVICE_DIR} &&\
-    . ./service/download_models.py
+    . ./service/download_models.py ${MODEL_PATH}
 
 WORKDIR ${PROJECT_ROOT}
