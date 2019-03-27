@@ -33,6 +33,6 @@ RUN mkdir -p ${SINGNET_REPOS} &&\
     python3 -m pip install -r requirements.txt &&\
     sh buildproto.sh &&\
     cd ${SERVICE_DIR} &&\
-    . ./service/download_models.py ${MODEL_PATH}
+    ./service/download_models.py ${MODEL_PATH}
 
 WORKDIR ${PROJECT_ROOT}

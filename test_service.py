@@ -12,13 +12,14 @@ if __name__ == "__main__":
     try:
 
         # open a gRPC channel
-        endpoint = "localhost:{}".format(registry["semantic_segmentation_aerial"]["grpc"])
+        endpoint = "localhost:{}".format(registry["semantic_segmentation_aerial_service"]["grpc"])
         channel = grpc.insecure_channel("{}".format(endpoint))
         print("Opened channel")
 
         grpc_method = "segment_aerial_image"
 
         input = pathlib.Path.cwd() / "docs/assets/examples/top_mosaic_09cm_area11.tif"
+        input = str(input)
         print("Input file path: {}".format(input))
         window_size = 256
         stride = 128
@@ -31,6 +32,7 @@ if __name__ == "__main__":
         request = grpc_bt_pb2.SemanticSegmentationAerialRequest(input=input,
                                                                 window_size=window_size,
                                                                 stride=stride)
+        print("Request created.")
         # make the call
         response = stub.segment_aerial_image(request)
         print("Response received: {}".format(response))

@@ -1,15 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import argparse
 import requests
 import pathlib
 
 parser = argparse.ArgumentParser(description="Download model/weights for the service.")
-parser.add_argument('filepath',
+parser.add_argument('--filepath',
                     type=str,
                     help="Specifies the full path of the model (including its name).",
-                    default="/root/singnet/semantic-segmentation-aerial/service/models/segnet_final_reference.pth")
-parser.add_argument('google_file_id',
+                    default="/opt/singnet/semantic-segmentation-aerial/service/models/segnet_final_reference.pth")
+parser.add_argument('--google_file_id',
                     type=str,
                     help="The ID of the Google Drive file to be downloaded.",
                     default="1cwXe8ANkhFqe2i_UNxpZu15y2HZ0N9KN")
