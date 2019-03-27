@@ -1,7 +1,7 @@
 from .serviceUtils import *
 import argparse
 
-registry = {"semantic_segmentation_aerial": {"grpc": 7015}}
+registry = {"semantic_segmentation_aerial_service": {"grpc": 7015}}
 
 
 def common_parser(script_name):
