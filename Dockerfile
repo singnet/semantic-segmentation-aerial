@@ -23,7 +23,7 @@ RUN mkdir snet-daemon && \
     cd snet-daemon && \
     wget https://github.com/singnet/snet-daemon/releases/download/${snetd_version}/snet-daemon-${snetd_version}-linux-amd64.tar.gz && \
     tar -xvf snet-daemon-${snetd_version}-linux-amd64.tar.gz && \
-    mv snet-daemon-${snetd_version}-linux-amd64/snetd /usr/bin/snetd
+    mv snet-daemon-${snetd_version}-linux-amd64/snetd /usr/bin/snetd && \
     cd .. && \
     rm -rf snet-daemon
 
