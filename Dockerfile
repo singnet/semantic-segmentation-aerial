@@ -14,7 +14,7 @@ ENV MODEL_PATH=${SERVICE_DIR}/models/segnet_final_reference.pth
 RUN apt update &&\
     apt install wget git &&\
     cd ~ &&\
-    python3 -m pip install cython &&
+    python3 -m pip install cython &&\
     python3 -m pip install --upgrade pip
 
 # Installing snet-daemon + dependencies
