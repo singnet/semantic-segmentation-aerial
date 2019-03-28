@@ -3,6 +3,7 @@ FROM pytorch/pytorch:0.4.1-cuda9-cudnn7-runtime
 ARG git_owner
 ARG git_repo
 ARG git_branch
+ARG snetd_version
 
 ENV SINGNET_REPOS=/opt/singnet
 ENV PROJECT_ROOT=${SINGNET_REPOS}/${git_repo}
@@ -20,9 +21,9 @@ RUN apt update &&\
 # Installing snet-daemon + dependencies
 RUN mkdir snet-daemon && \
     cd snet-daemon && \
-    wget -q https://github.com/singnet/snet-daemon/releases/download/v0.1.8/snet-daemon-v0.1.8-linux-amd64.tar.gz && \
-    tar -xvf snet-daemon-v0.1.8-linux-amd64.tar.gz  && \
-    mv ./snet-daemon-v0.1.8-linux-amd64/snetd /usr/bin/snetd && \
+    wget https://github.com/singnet/snet-daemon/releases/download/${snetd_version}/snet-daemon-${snetd_version}-linux-amd64.tar.gz && \
+    tar -xvf snet-daemon-${snetd_version}-linux-amd64.tar.gz && \
+    mv snet-daemon-${snetd_version}-linux-amd64/snetd /usr/bin/snetd
     cd .. && \
     rm -rf snet-daemon
 
