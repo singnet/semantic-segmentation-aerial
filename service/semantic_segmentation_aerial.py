@@ -267,7 +267,8 @@ class SemanticSegmentationAerialModel:
                     out = out.transpose((1, 2, 0))
                     pred[x:x+w, y:y+h] += out
                 del outs
-            log.debug("Image evaluation complete.")
+            torch.cuda.empty_cache()
+            log.debug("Image evaluation complete and GPU memory freed.")
 
             pred = np.argmax(pred, axis=-1)
             img = self.convert_to_color(pred)
@@ -275,6 +276,7 @@ class SemanticSegmentationAerialModel:
             log.debug("Output image saved at: {}.".format(output_image_path))
             return True
         except Exception as e:
+            torch.cuda.empty_cache()
             log.error(e)
             raise e
 
