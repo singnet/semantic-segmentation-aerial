@@ -16,7 +16,8 @@ RUN apt update &&\
     apt install wget git &&\
     cd ~ &&\
     python3 -m pip install cython &&\
-    python3 -m pip install --upgrade pip
+    python3 -m pip install --upgrade pip &&\
+    pip uninstall -y matplotlib
 
 # Installing snet-daemon + dependencies
 RUN mkdir snet-daemon && \
