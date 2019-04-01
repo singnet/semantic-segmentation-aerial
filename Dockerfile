@@ -16,8 +16,7 @@ RUN apt update &&\
     apt install wget git &&\
     cd ~ &&\
     python3 -m pip install cython &&\
-    python3 -m pip install --upgrade pip &&\
-    pip uninstall -y matplotlib
+    python3 -m pip install --upgrade pip
 
 # Installing snet-daemon + dependencies
 RUN mkdir snet-daemon && \
@@ -35,6 +34,7 @@ RUN mkdir -p ${SINGNET_REPOS} &&\
     cd ${PROJECT_ROOT} &&\
     python3 -m pip install -r requirements.txt &&\
     sh buildproto.sh &&\
-    ./service/download_models.py --filepath ${MODEL_PATH}
+    ./service/download_models.py --filepath ${MODEL_PATH} &&\
+    python3 -m pip uninstall -y matplotlib
 
 WORKDIR ${PROJECT_ROOT}
