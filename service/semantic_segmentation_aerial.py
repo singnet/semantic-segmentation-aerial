@@ -256,17 +256,18 @@ class SemanticSegmentationAerialModel:
                 # Build the tensor
                 image_patches = [np.copy(img[x:x+w, y:y+h]).transpose((2, 0, 1)) for x, y, w, h in coords]
                 image_patches = np.asarray(image_patches)
-                image_patches = Variable(torch.from_numpy(image_patches).cuda(), volatile=True)
+                with torch.no_grad():
+                    image_patches = Variable(torch.from_numpy(image_patches).cuda())
 
-                # Do the inference
-                outs = self.net(image_patches)
-                outs = outs.data.cpu().numpy()
+                    # Do the inference
+                    outs = self.net(image_patches)
+                    outs = outs.data.cpu().numpy()
 
-                # Fill in the results array
-                for out, (x, y, w, h) in zip(outs, coords):
-                    out = out.transpose((1, 2, 0))
-                    pred[x:x+w, y:y+h] += out
-                del outs
+                    # Fill in the results array
+                    for out, (x, y, w, h) in zip(outs, coords):
+                        out = out.transpose((1, 2, 0))
+                        pred[x:x+w, y:y+h] += out
+                    del outs
             torch.cuda.empty_cache()
             log.debug("Image evaluation complete and GPU memory freed.")
 
@@ -276,106 +277,6 @@ class SemanticSegmentationAerialModel:
             log.debug("Output image saved at: {}.".format(output_image_path))
             return True
         except Exception as e:
-            torch.cuda.empty_cache()
             log.error(e)
+            torch.cuda.empty_cache()
             raise e
-
-# Parameters
-
-# MODEL_PATH = '/opt/singnet/semantic-segmentation-aerial/service/segnet_final_reference.pth'
-# IN_CHANNELS = 3  # Number of input channels (e.g. RGB)
-# BATCH_SIZE = 10  # Number of samples in a mini-batch
-# LABELS = ["roads", "buildings", "low veg.", "trees", "cars", "clutter"]  # Label names
-
-# N_CLASSES = len(LABELS)  # Number of classes
-# WEIGHTS = torch.ones(N_CLASSES)  # Weights for class balancing
-# CACHE = True  # Store the dataset in-memory
-
-# ISPRS color palette
-
-# Let's define the standard ISPRS color palette
-# palette = {0: (255, 255, 255),  # Impervious surfaces (white)
-#            1: (0, 0, 255),  # Buildings (blue)
-#            2: (0, 255, 255),  # Low vegetation (cyan)
-#            3: (0, 255, 0),  # Trees (green)
-#            4: (255, 255, 0),  # Cars (yellow)
-#            5: (255, 0, 0),  # Clutter (red)
-#            6: (0, 0, 0)}  # Undefined (black)
-# invert_palette = {v: k for k, v in palette.items()}
-
-# instantiate the network
-# try:
-#     from urllib.request import URLopener
-# except ImportError:
-#     from urllib import URLopener
-#
-# # Download VGG-16 weights from PyTorch
-# vgg_url = 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth'
-# if not os.path.isfile('./vgg16_bn-6c64b313.pth'):
-#     weights = URLopener().retrieve(vgg_url, './vgg16_bn-6c64b313.pth')
-#
-# vgg16_weights = torch.load('./vgg16_bn-6c64b313.pth')
-# mapped_weights = {}
-# for k_vgg, k_segnet in zip(vgg16_weights.keys(), net.state_dict().keys()):
-#     if "features" in k_vgg:
-#         mapped_weights[k_segnet] = vgg16_weights[k_vgg]
-#         print("Mapping {} to {}".format(k_vgg, k_segnet))
-#
-# try:
-#     net.load_state_dict(mapped_weights)
-#     print("Loaded VGG-16 weights in SegNet !")
-# except:
-#     # Ignore missing keys
-#     pass
-
-# net.cuda()
-
-# TODO: ACTUAL PREDICTION CODE
-
-# input_image = "/root/Shared/aerial.png"
-# input_image = "/root/Shared/vie1.jpg"
-# STRIDE = 16
-# stride = STRIDE
-# batch_size = BATCH_SIZE
-# WINDOW_SIZE = (256, 256) # Patch size
-# window_size = (256, 256)
-
-# def test(net, input_image, all=False, stride=WINDOW_SIZE[0], batch_size=BATCH_SIZE, window_size=WINDOW_SIZE):
-
-# Use the network on the test set
-# img = (1 / 255 * np.asarray(io.imread(input_image), dtype='float32'))
-# all_preds = []
-
-# Switch the network to inference mode
-# net.eval()
-
-# pred = np.zeros(img.shape[:2] + (N_CLASSES,))
-
-# total = count_sliding_window(img, step=stride, window_size=window_size) // batch_size
-# for i, coords in enumerate(tqdm(grouper(batch_size,
-#                                         sliding_window(img,
-#                                                        step=stride,
-#                                                        window_size=window_size)),
-#                                 total=total,
-#                                 leave=False)):
-#     # Display in progress results
-#     # if i > 0 and total > 10 and i % int(10 * total / 100) == 0:
-#         # TODO: Remove plotting / Keep progress code ?
-#     # _pred = np.argmax(pred, axis=-1)
-#
-#     # Build the tensor
-#     image_patches = [np.copy(img[x:x+w, y:y+h]).transpose((2, 0, 1)) for x, y, w, h in coords]
-#     image_patches = np.asarray(image_patches)
-#     image_patches = Variable(torch.from_numpy(image_patches).cuda(), volatile=True)
-#
-#     # Do the inference
-#     outs = net(image_patches)
-#     outs = outs.data.cpu().numpy()
-#
-#     # Fill in the results array
-#     for out, (x, y, w, h) in zip(outs, coords):
-#         out = out.transpose((1, 2, 0))
-#         pred[x:x+w, y:y+h] += out
-#     del outs
-#
-# pred = np.argmax(pred, axis=-1)

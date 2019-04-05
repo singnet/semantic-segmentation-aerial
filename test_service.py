@@ -18,33 +18,35 @@ if __name__ == "__main__":
 
         grpc_method = "segment_aerial_image"
 
-        input = pathlib.Path.cwd() / "docs/assets/examples/top_mosaic_09cm_area11.tif"
-        input = str(input)
-        print("Input file path: {}".format(input))
-        window_size = 256
-        stride = 128
+        input_path = pathlib.Path.cwd() / "docs/assets/examples/top_mosaic_09cm_area11.tif"
+        input_path = str(input_path)
+        window_size = 1024
+        stride = 512
 
         # create a stub (client)
         stub = grpc_bt_grpc.SemanticSegmentationAerialStub(channel)
         print("Stub created.")
 
         # create a valid request message
-        request = grpc_bt_pb2.SemanticSegmentationAerialRequest(input=input,
+        request = grpc_bt_pb2.SemanticSegmentationAerialRequest(input=input_path,
                                                                 window_size=window_size,
                                                                 stride=stride)
-        print("Request created.")
+        print("Request created: {}".format(request))
         # make the call
         response = stub.segment_aerial_image(request)
         print("Response received: {}".format(response))
-
-        # et voilà
-        output_file_path = "./segmented_output_image.jpg"
-        if response.data:
-            base64_to_jpg(response.data, output_file_path)
-            clear_file(output_file_path)
-            print("Service completed!")
+        if "out of memory" in response.data:
+            exit(0)
         else:
-            print("Service failed! No data received.")
-
+            # et voilà
+            output_file_path = "./segmented_output_image.jpg"
+            if response.data:
+                base64_to_jpg(response.data, output_file_path)
+                clear_file(output_file_path)
+                print("Service completed!")
+            else:
+                print("Service failed! No data received.")
+            exit(0)
     except Exception as e:
         print(e)
+        exit(1)
