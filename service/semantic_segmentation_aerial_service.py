@@ -198,6 +198,7 @@ def main_loop(grpc_handler, args):
         while True:
             time.sleep(0.1)
             if out_of_memory:
+                out_of_memory = False
                 exit(5)
     except KeyboardInterrupt:
         server.stop(0)
