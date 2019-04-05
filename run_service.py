@@ -36,10 +36,11 @@ def main():
                 if p.returncode and p.returncode != 0:
                     log.debug("Subprocess returned code: {}".format(p.returncode))
                     if p.returncode == 5:
-                        log.debug("Subprocess returned code: {}. Killing and restarting service.".format(p.returncode))
+                        log.debug("Subprocess returned code: {}. Killing and restarting service and daemon.".format(p.returncode))
                         try:
-                            os.kill(p.pid, signal.SIGTERM)
-                            all_p = start_all_services(root_path, service_modules, False, False)
+                            for old_p in all_p:
+                                os.kill(old_p.pid, signal.SIGTERM)
+                            all_p = start_all_services(root_path, service_modules, args.run_daemon, args.run_ssl)
                         except Exception as e:
                             log.error(e)
                     else:
