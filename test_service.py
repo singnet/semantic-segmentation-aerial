@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
         input_path = pathlib.Path.cwd() / "docs/assets/examples/top_mosaic_09cm_area11.tif"
         input_path = str(input_path)
-        window_size = 2048
+        window_size = 1024
         stride = 512
 
         # create a stub (client)
