@@ -104,7 +104,7 @@ class SemanticSegmentationAerialServicer(grpc_bt_grpc.SemanticSegmentationAerial
 
         return image_path, window_size, stride, file_index_str
 
-    def segment_aerial_image(self, request):
+    def segment_aerial_image(self, request, context):
         """Increases the resolution of a given image (request.image) """
 
         global out_of_memory
