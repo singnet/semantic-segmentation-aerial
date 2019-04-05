@@ -34,9 +34,16 @@ def main():
             for p in all_p:
                 p.poll()
                 if p.returncode and p.returncode != 0:
+                    log.debug("Subprocess returned code: {}".format(p.returncode))
                     if p.returncode == 5:
-                        all_p = start_all_services(root_path, service_modules, False, False)
+                        log.debug("Subprocess returned code: {}. Killing and restarting service.".format(p.returncode))
+                        try:
+                            os.kill(p.pid, signal.SIGTERM)
+                            all_p = start_all_services(root_path, service_modules, False, False)
+                        except Exception as e:
+                            log.error(e)
                     else:
+                        log.debug("Subprocess returned code: {}. Killing and exiting.".format(p.returncode))
                         kill_and_exit(all_p)
             time.sleep(1)
     except Exception as e:
@@ -55,6 +62,8 @@ def start_all_services(cwd, service_modules, run_daemon, run_ssl):
         service_name = service_module.split(".")[-1]
         log.info("Launching {} on port {}".format(service_module, str(registry[service_name])))
         all_p += start_service(cwd, service_module, run_daemon, run_ssl)
+        for p in all_p:
+            log.debug("Service {} started with PID {}".format(service_module, p.pid))
     return all_p
 
 
