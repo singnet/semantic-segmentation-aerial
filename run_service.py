@@ -29,27 +29,19 @@ def main():
     all_p = start_all_services(root_path, service_modules, args.run_daemon, args.run_ssl)
 
     # Continuously checking all subprocesses
-    try:
-        while True:
-            for p in all_p:
-                p.poll()
-                if p.returncode and p.returncode != 0:
-                    log.debug("Subprocess returned code: {}".format(p.returncode))
-                    if p.returncode == 5:
-                        log.debug("Subprocess returned code: {}. Killing and restarting service and daemon.".format(p.returncode))
-                        try:
-                            for old_p in all_p:
-                                os.kill(old_p.pid, signal.SIGTERM)
-                            all_p = start_all_services(root_path, service_modules, args.run_daemon, args.run_ssl)
-                        except Exception as e:
-                            log.error(e)
-                    else:
-                        log.debug("Subprocess returned code: {}. Killing and exiting.".format(p.returncode))
-                        kill_and_exit(all_p)
-            time.sleep(1)
-    except Exception as e:
-        log.error(e)
-        raise
+    while True:
+        for p in all_p:
+            p.poll()
+            if p.returncode and p.returncode != 0:
+                log.debug("Subprocess returned code: {}. Killing service and daemon.".format(p.returncode))
+                kill_processes(all_p)
+                if p.returncode == 5:
+                    log.debug("Restarting!")
+                    all_p = start_all_services(root_path, service_modules, args.run_daemon, args.run_ssl)
+                else:
+                    log.debug("Exiting!")
+                    exit(1)
+        time.sleep(1)
 
 
 def start_all_services(cwd, service_modules, run_daemon, run_ssl):
@@ -106,13 +98,12 @@ def start_snetd(cwd, config_file=None):
     return subprocess.Popen(cmd, cwd=str(cwd))
 
 
-def kill_and_exit(all_p):
+def kill_processes(all_p):
     for p in all_p:
         try:
             os.kill(p.pid, signal.SIGTERM)
         except Exception as e:
             log.error(e)
-    exit(1)
 
 
 if __name__ == "__main__":

@@ -256,17 +256,18 @@ class SemanticSegmentationAerialModel:
                 # Build the tensor
                 image_patches = [np.copy(img[x:x+w, y:y+h]).transpose((2, 0, 1)) for x, y, w, h in coords]
                 image_patches = np.asarray(image_patches)
-                image_patches = Variable(torch.from_numpy(image_patches).cuda(), volatile=True)
+                with torch.no_grad():
+                    image_patches = Variable(torch.from_numpy(image_patches).cuda())
 
-                # Do the inference
-                outs = self.net(image_patches)
-                outs = outs.data.cpu().numpy()
+                    # Do the inference
+                    outs = self.net(image_patches)
+                    outs = outs.data.cpu().numpy()
 
-                # Fill in the results array
-                for out, (x, y, w, h) in zip(outs, coords):
-                    out = out.transpose((1, 2, 0))
-                    pred[x:x+w, y:y+h] += out
-                del outs
+                    # Fill in the results array
+                    for out, (x, y, w, h) in zip(outs, coords):
+                        out = out.transpose((1, 2, 0))
+                        pred[x:x+w, y:y+h] += out
+                    del outs
             torch.cuda.empty_cache()
             log.debug("Image evaluation complete and GPU memory freed.")
 
