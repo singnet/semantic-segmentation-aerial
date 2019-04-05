@@ -5,25 +5,11 @@ from urllib.parse import urlparse
 import base64
 import io
 from PIL import Image
-import time
 import re
 
 logging.basicConfig(
     level=10, format="%(asctime)s - [%(levelname)8s] - %(name)s - %(message)s")
 log = logging.getLogger(os.path.basename(__file__))
-
-
-def main_loop(grpc_handler, args):
-    """From gRPC docs:
-    Because start() does not block you may need to sleep-loop if there is nothing
-    else for your code to do while serving."""
-    server = grpc_handler(port=args.grpc_port)
-    server.start()
-    try:
-        while True:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        server.stop(0)
 
 
 def download(url, filename):

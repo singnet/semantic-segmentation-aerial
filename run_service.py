@@ -34,7 +34,10 @@ def main():
             for p in all_p:
                 p.poll()
                 if p.returncode and p.returncode != 0:
-                    kill_and_exit(all_p)
+                    if p.returncode == 5:
+                        all_p = start_all_services(root_path, service_modules, False, False)
+                    else:
+                        kill_and_exit(all_p)
             time.sleep(1)
     except Exception as e:
         log.error(e)

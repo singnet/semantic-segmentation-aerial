@@ -10,12 +10,14 @@ import os
 import pathlib
 from urllib.error import HTTPError
 from service.semantic_segmentation_aerial import SemanticSegmentationAerialModel
+import time
 
 logging.basicConfig(
     level=10, format="%(asctime)s - [%(levelname)8s] - %(name)s - %(message)s"
 )
 log = logging.getLogger("semantic_segmentation_aerial_service")
 
+out_of_memory = False
 
 class SemanticSegmentationAerialServicer(grpc_bt_grpc.SemanticSegmentationAerialServicer):
     """Semantic segmentation for aerial images servicer class to be added to the gRPC stub.
@@ -75,15 +77,15 @@ class SemanticSegmentationAerialServicer(grpc_bt_grpc.SemanticSegmentationAerial
                     log.error(e)
                     raise
             elif field == "window_size":
-                    # If empty, fill with default, else check if valid
-                    if request.window_size == 0 or request.window_size == "":
-                        window_size = default
-                    else:
-                        try:
-                            window_size = int(request.window_size)
-                        except Exception as e:
-                            log.error(e)
-                            raise
+                # If empty, fill with default, else check if valid
+                if request.window_size == 0 or request.window_size == "":
+                    window_size = default
+                else:
+                    try:
+                        window_size = int(request.window_size)
+                    except Exception as e:
+                        log.error(e)
+                        raise
             elif field == "stride":
                 # If empty, fill with default, else check if valid
                 if request.stride == 0 or request.stride == "":
@@ -102,8 +104,10 @@ class SemanticSegmentationAerialServicer(grpc_bt_grpc.SemanticSegmentationAerial
 
         return image_path, window_size, stride, file_index_str
 
-    def segment_aerial_image(self, request, context):
+    def segment_aerial_image(self, request):
         """Increases the resolution of a given image (request.image) """
+
+        global out_of_memory
 
         # Store the names of the images to delete them afterwards
         created_images = []
@@ -117,29 +121,41 @@ class SemanticSegmentationAerialServicer(grpc_bt_grpc.SemanticSegmentationAerial
         try:
             image_path, window_size, stride, file_index_str = self.treat_inputs(request, arguments, created_images)
         except HTTPError as e:
-            error_message = "Error downloading the input image \n" + e.read()
+            error_message = "Error downloading a TIFF image from the input URL." + "\n" + str(e)
             log.error(error_message)
-            self.result.data = error_message
+            self.result.data = str(error_message)
             return self.result
         except Exception as e:
             log.error(e)
-            self.result.data = e
+            self.result.data = str(e)
             return self.result
 
         # Get output file path
         input_filename = os.path.split(created_images[0])[1]
         log.debug("Input file name: {}".format(input_filename))
-        output_image_path = self.output_dir + '/' + input_filename
+        # TODO: More like TONOTICE in the future: only .png files are saved for this service
+        output_image_path = self.output_dir + '/' + str(input_filename).split(".")[0] + ".png"
         log.debug("Output image path: {}".format(output_image_path))
         created_images.append(output_image_path)
 
         # Actual call to the model
-        self.model.segment(image_path, window_size, stride, output_image_path)
+        try:
+            self.model.segment(image_path, window_size, stride, output_image_path)
+        except Exception as e:
+            string_error = str(e)
+            log.error(string_error)
+            self.result.data = string_error
+            if "out of memory" in string_error:
+                out_of_memory = True
+            return self.result
 
         # Prepare gRPC output message
         self.result = Image()
         if input_filename.split('.')[1] == 'png':
             log.debug("Encoding from PNG.")
+            self.result.data = service.png_to_base64(output_image_path).decode("utf-8")
+        if input_filename.split('.')[1] == 'tif' or input_filename.split('.')[1] == 'tiff':
+            log.debug("Input image type is .tif. Encoding output from PNG.")
             self.result.data = service.png_to_base64(output_image_path).decode("utf-8")
         else:
             log.debug("Encoding from JPG.")
@@ -170,8 +186,25 @@ def serve(max_workers=5, port=7777):
     return server
 
 
+def main_loop(grpc_handler, args):
+    """From gRPC docs:
+    Because start() does not block you may need to sleep-loop if there is nothing
+    else for your code to do while serving."""
+    global out_of_memory
+
+    server = grpc_handler(port=args.grpc_port)
+    server.start()
+    try:
+        while True:
+            time.sleep(0.1)
+            if out_of_memory:
+                exit(5)
+    except KeyboardInterrupt:
+        server.stop(0)
+
+
 if __name__ == '__main__':
     """Runs the gRPC server to communicate with the Snet Daemon."""
     parser = service.common_parser(__file__)
     args = parser.parse_args(sys.argv[1:])
-    service.serviceUtils.main_loop(serve, args)
+    main_loop(serve, args)

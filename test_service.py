@@ -21,7 +21,7 @@ if __name__ == "__main__":
         input = pathlib.Path.cwd() / "docs/assets/examples/top_mosaic_09cm_area11.tif"
         input = str(input)
         print("Input file path: {}".format(input))
-        window_size = 256
+        window_size = 512
         stride = 128
 
         # create a stub (client)
