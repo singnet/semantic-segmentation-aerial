@@ -19,13 +19,11 @@ RUN apt update &&\
     python3 -m pip install --upgrade pip
 
 # Installing snet-daemon + dependencies
-RUN mkdir snet-daemon && \
-    cd snet-daemon && \
-    wget https://github.com/singnet/snet-daemon/releases/download/${snetd_version}/snet-daemon-${snetd_version}-linux-amd64.tar.gz && \
-    tar -xvf snet-daemon-${snetd_version}-linux-amd64.tar.gz && \
-    mv snet-daemon-${snetd_version}-linux-amd64/snetd /usr/bin/snetd && \
-    cd .. && \
-    rm -rf snet-daemon
+RUN SNETD_VERSION=`curl -s https://api.github.com/repos/singnet/snet-daemon/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'` && \
+    cd /tmp && \
+    wget https://github.com/singnet/snet-daemon/releases/download/${SNETD_VERSION}/snet-daemon-${SNETD_VERSION}-linux-amd64.tar.gz && \
+    tar -xvf snet-daemon-${SNETD_VERSION}-linux-amd64.tar.gz && \
+    mv snet-daemon-${SNETD_VERSION}-linux-amd64/snetd /usr/bin/snetd
 
 # Cloning service repository and downloading models. Installing projects's original dependencies and building protobuf messages
 RUN mkdir -p ${SINGNET_REPOS} &&\
