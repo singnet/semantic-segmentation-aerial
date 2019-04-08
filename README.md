@@ -5,7 +5,7 @@
 <img align="right" src="./docs/assets/logo/singularityNETblue.png" alt="drawing" width="160"/>
 </a>
 
-# Super Resolution
+# Semantic Segmentation for Aerial Images
 
 > Repository for SingularityNET's "Semantic Segmentation for Aerial Images" service
 
