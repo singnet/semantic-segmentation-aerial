@@ -17,7 +17,7 @@ It is part of SingularityNET's third party services, [originally implemented by 
 
 The service takes as input:
 - Required parameters:
-    - input (string): the URL of an *infrared TIFF image* of interest;
+    - input (string): the URL of an **infrared TIFF image** of interest;
     - window_size (integer): the size of the square sliding window used to perform the segmentation. The larger it is, the larger the image patch that will be processed at a time;
     - stride (integer): the amount by which to shift the sliding window. Its maximum is the size of the sliding window so as to cover the entire scope of the input image. The smaller it is, the higher the precision but also its processing time also increases significantly - usually `stride = window_size/2` generates good results. ;
 
