@@ -34,7 +34,7 @@ if __name__ == "__main__":
         print("Request created: {}".format(request))
         # make the call
         response = stub.segment_aerial_image(request)
-        print("Response received! First 200 characters: {}".format(response[0:200]))
+        print("Response received! First 200 characters: {}".format(response.data[0:200]))
         if "out of memory" in response.data:
             exit(0)
         else:
