@@ -13,7 +13,7 @@ ENV MODEL_PATH=${SERVICE_DIR}/models/segnet_final_reference.pth
 
 # Updates and basic dependencies
 RUN apt update &&\
-    apt install wget git &&\
+    apt install wget git curl &&\
     cd ~ &&\
     python3 -m pip install cython &&\
     python3 -m pip install --upgrade pip
