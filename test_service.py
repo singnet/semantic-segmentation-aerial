@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
         input_path = pathlib.Path.cwd() / "docs/assets/examples/top_mosaic_09cm_area11.tif"
         input_path = str(input_path)
-        window_size = 1024
+        window_size = 512
         stride = 512
 
         # create a stub (client)
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         print("Request created: {}".format(request))
         # make the call
         response = stub.segment_aerial_image(request)
-        print("Response received: {}".format(response))
+        print("Response received! First 200 characters: {}".format(response.data[0:200]))
         if "out of memory" in response.data:
             exit(0)
         else:
